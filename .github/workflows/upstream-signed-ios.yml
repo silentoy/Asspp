@@ -195,18 +195,40 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
+
+          echo "Installed Xcode apps:"
+          ls -1 /Applications | grep -E '^Xcode.*\.app$' || true
+
           for XCODE_APP in \
+            /Applications/Xcode_26.5_beta.app \
+            /Applications/Xcode_26.5.app \
+            /Applications/Xcode_26.4.app \
+            /Applications/Xcode_26.3.app \
+            /Applications/Xcode_26.2.app \
+            /Applications/Xcode_26.1.app \
             /Applications/Xcode_26.0.app \
-            /Applications/Xcode_16.4.app \
-            /Applications/Xcode_16.3.app \
             /Applications/Xcode.app
           do
-            if [ -d "${XCODE_APP}" ]; then
-              sudo xcode-select -s "${XCODE_APP}"
+            if [ -d "${XCODE_APP}/Contents/Developer" ]; then
+              echo "Selecting ${XCODE_APP}"
+              sudo xcode-select -s "${XCODE_APP}/Contents/Developer"
               break
             fi
           done
+
+          echo "Selected developer directory:"
+          xcode-select -p
+
+          echo "Xcode version:"
           xcodebuild -version
+
+          echo "Available SDKs:"
+          xcodebuild -showsdks
+
+          if ! xcodebuild -showsdks | grep -q 'iphoneos26'; then
+            echo "Selected Xcode does not include iOS 26 SDK/platform."
+            exit 1
+          fi
 
       - name: Install signing assets
         id: signing
